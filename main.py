@@ -24,23 +24,38 @@ def main(message):
 
     if message.text == "Відправити заявку":
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
+        button_cancel = types.KeyboardButton("Відмінити")
+        keyboard.add(button_cancel)
+        bot.send_message(message.chat.id, "✍️ Опишіть в двух словах Вашу проблему, або натисність на кнопку нижче для відміни операції", reply_markup=keyboard)
+        bot.register_next_step_handler(message, number_step)
+
+    if message.text == "Відмінити":
+        bot.send_message(message.chat.id, "👌 Операцію відмінено!")
+        send_choose(message)
+
+def number_step(message):
+    if message.text == "Відмінити":
+        bot.send_message(message.chat.id, "👌 Операцію відмінено!")
+        send_choose(message)
+    else:
+        global problem
+        problem = message.text
+        keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
         button_phone = types.KeyboardButton(text="Відправити телефон", request_contact=True)
         button_cancel = types.KeyboardButton("Відмінити")
         keyboard.add(button_phone, button_cancel)
         bot.send_message(message.chat.id, '⬇️ Натисність на кнопку нижче для автоматичної відправки номеру телефону або відмініть операцію', reply_markup=keyboard)
-    
-    if message.text == "Відмінити":
-        bot.send_message(message.chat.id, "👌 Операцію відмінено!")
-        send_choose(message)
 
 @bot.message_handler(content_types=['contact'])
 def contact(message):
     bot.send_message(message.chat.id, "💪 Дякую. Контактна інформація буде передана волонтерським організаціям для подальшої роботи.")
     
     if message.contact is not None:
+        bot.send_message(channel, '❗️*Надійшла нова заявка!*\n\nКоментар: ' + problem + '\n\n⬇️ Контакт', parse_mode="Markdown")
         bot.send_contact(channel, first_name=message.contact.first_name, phone_number=message.contact.phone_number, last_name=message.contact.last_name)
-    
+
     send_choose(message)
 
-if __name__ == '__main__':
-    bot.polling(none_stop = True)
+bot.enable_save_next_step_handlers(delay=2)
+bot.load_next_step_handlers()
+bot.polling()
